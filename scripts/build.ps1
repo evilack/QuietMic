@@ -11,7 +11,7 @@ if (-not $BuildDirectory) { $BuildDirectory = Join-Path $sourceRoot 'build/produ
 $BuildDirectory = [IO.Path]::GetFullPath($BuildDirectory)
 $SlintSdk = (Resolve-Path -LiteralPath $SlintSdk).Path
 if (-not (Test-Path -LiteralPath (Join-Path $SlintSdk 'lib/cmake/Slint/SlintConfig.cmake'))) {
-    throw 'Use the official Slint 1.18.0 win64 MSVC SDK directory.'
+    throw 'Use the official Slint 1.17.1 win64 MSVC SDK directory.'
 }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 # 사용자의 VS 설치 위치를 추측하지 않고 공식 조회 도구가 반환한 경로를 사용한다.

@@ -120,7 +120,7 @@ cd QuietMic
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 ```
 
-`bootstrap.ps1`은 검증된 Slint C++ SDK 1.18.0과 NSIS 3.12를 프로젝트의 `.deps` 폴더에 준비하고 `QuietMic.slnx`를 생성합니다. 시스템 전체에 별도 SDK를 설치하지 않습니다. 이후 Visual Studio에서 `QuietMic.slnx`를 열어 `Release | x64`로 빌드할 수 있습니다.
+`bootstrap.ps1`은 검증된 Slint C++ SDK 1.17.1과 NSIS 3.12를 프로젝트의 `.deps` 폴더에 준비하고 `QuietMic.slnx`를 생성합니다. 시스템 전체에 별도 SDK를 설치하지 않습니다. 이후 Visual Studio에서 `QuietMic.slnx`를 열어 `Release | x64`로 빌드할 수 있습니다.
 
 설치 파일까지 명령줄에서 만들려면 다음 명령을 실행합니다.
 

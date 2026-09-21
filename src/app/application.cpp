@@ -47,9 +47,11 @@ int run_application(const std::vector<std::wstring> &arguments)
         Tray::show_existing();
         return 0;
     }
-    // Slint 백엔드를 사용자가 지정하지 않았을 때만 기본 소프트웨어 렌더러를 선택한다.
+    // Slint의 소프트웨어 부분 렌더러는 숨긴 창을 다시 표시할 때 전체 프레임을
+    // 무효화하지 않아 흰 화면이 남을 수 있다. 사용자가 별도 백엔드를 지정하지 않은 경우
+    // Windows 합성 경로에서 전체 창을 안정적으로 다시 그리는 FemtoVG를 사용한다.
     if (!GetEnvironmentVariableW(L"SLINT_BACKEND", nullptr, 0))
-        SetEnvironmentVariableW(L"SLINT_BACKEND", L"winit-software");
+        SetEnvironmentVariableW(L"SLINT_BACKEND", L"winit-femtovg");
     // 공유 소유권을 만든 뒤 콜백을 연결하는 팩터리다.
     auto app = AppController::create(paths);
     // 여기서 UI 이벤트 루프를 실행하고, 종료 요청이 오면 컨트롤러의 종료 코드를 반환한다.

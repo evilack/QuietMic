@@ -1,7 +1,7 @@
 # 빌드의 시작점: 공통 런타임 → 진단 CLI/드라이버 → 데스크톱 앱 순으로 의존성을 선언한다.
 # CMake는 이 정의로 VS 프로젝트를 생성하며 실제 C++ 실행 로직은 src 아래에 있다.
 cmake_minimum_required(VERSION 3.24)
-project(QuietMic VERSION 0.1.0 LANGUAGES C CXX)
+project(QuietMic VERSION 0.1.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -71,7 +71,7 @@ if(QUIETMIC_BUILD_APP)
     if(NOT Slint_DIR AND EXISTS "${PROJECT_SOURCE_DIR}/.deps/slint/lib/cmake/Slint/SlintConfig.cmake")
         set(Slint_DIR "${PROJECT_SOURCE_DIR}/.deps/slint/lib/cmake/Slint" CACHE PATH "Slint C++ SDK CMake package")
     endif()
-    find_package(Slint 1.18.0 EXACT REQUIRED)
+    find_package(Slint 1.17.1 EXACT REQUIRED)
     set(app_sources
         src/main.cpp
         src/app/application.cpp src/app/application.hpp

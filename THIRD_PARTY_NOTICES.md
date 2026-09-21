@@ -11,8 +11,8 @@
 ## Slint
 
 - Upstream: https://github.com/slint-ui/slint
-- Official C++ SDK/runtime: 1.18.0 Windows MSVC AMD64.
-- SDK asset SHA-256: `c0d794984fd083eb855dd8aa2e102653d03fe252b410742ac5837eed776b1878`.
+- Official C++ SDK/runtime: 1.17.1 Windows MSVC AMD64.
+- SDK asset SHA-256: `f5b537da448c1e3d72a24a774e19518ae412b9706b8ef49bdee64b62b878fe56`.
 - Application uses the Slint Royalty-free Desktop, Mobile, and Web Applications License 2.0, included in `licenses/Slint-Royalty-free-2.0.md`.
 - Official `AboutSlint` widget is accessible in the App Settings screen. Do not remove it without providing another attribution option that satisfies the license.
 - Runtime third-party dependency notices: `licenses/Slint-THIRDPARTY.md`. Slint framework license overview: `licenses/Slint-LICENSE.md`.

@@ -132,7 +132,7 @@ Section "$(MainSection)"
  CreateDirectory "$SMPROGRAMS\QuietMic"
  CreateShortcut "$SMPROGRAMS\QuietMic\QuietMic.lnk" "$INSTDIR\QuietMic.exe"
  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\QuietMic" "DisplayName" "QuietMic"
- WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\QuietMic" "DisplayVersion" "0.1.0"
+ WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\QuietMic" "DisplayVersion" "0.1.1"
  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\QuietMic" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\QuietMic" "InstallLocation" "$INSTDIR"
  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\QuietMic" "DisplayIcon" "$INSTDIR\QuietMic.exe"

@@ -12,7 +12,7 @@ if (-not $SlintSdk) { $SlintSdk = Join-Path $sourceRoot '.deps/slint' }
 $SlintSdk = (Resolve-Path -LiteralPath $SlintSdk).Path
 $slintConfig = Join-Path $SlintSdk 'lib/cmake/Slint'
 if (-not (Test-Path -LiteralPath (Join-Path $slintConfig 'SlintConfig.cmake'))) {
-    throw 'Slint C++ SDK not found. Pass -SlintSdk with the Slint 1.18.0 MSVC SDK directory.'
+    throw 'Slint C++ SDK not found. Pass -SlintSdk with the Slint 1.17.1 MSVC SDK directory.'
 }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 # C++ 도구가 설치된 VS를 조회한 뒤 그 VS에 포함된 CMake를 선택한다.

@@ -7,16 +7,16 @@ $dependencyRoot = Join-Path $projectRoot '.deps'
 $downloadRoot = Join-Path $projectRoot 'build\downloads'
 $slintRoot = Join-Path $dependencyRoot 'slint'
 $slintConfig = Join-Path $slintRoot 'lib\cmake\Slint\SlintConfig.cmake'
-$slintVersion = '1.18.0'
+$slintVersion = '1.17.1'
 $slintAsset = "Slint-cpp-$slintVersion-win64-MSVC-AMD64.exe"
 $slintUrl = "https://github.com/slint-ui/slint/releases/download/v$slintVersion/$slintAsset"
-$slintSha256 = 'C0D794984FD083EB855DD8AA2E102653D03FE252B410742AC5837EED776B1878'
+$slintSha256 = 'F5B537DA448C1E3D72A24A774E19518AE412B9706B8EF49BDEE64B62B878FE56'
 
 # 설정 파일이 있더라도 다른 SDK가 남아 있을 수 있으므로 버전 파일의 정확한 값을 확인한다.
 $versionFile = Join-Path $slintRoot 'lib\cmake\Slint\SlintConfigVersion.cmake'
 $slintReady = (Test-Path -LiteralPath $slintConfig -PathType Leaf) -and
     (Test-Path -LiteralPath $versionFile -PathType Leaf) -and
-    ((Get-Content -LiteralPath $versionFile -Raw) -match 'set\(PACKAGE_VERSION "1\.18\.0"\)')
+    ((Get-Content -LiteralPath $versionFile -Raw) -match 'set\(PACKAGE_VERSION "1\.17\.1"\)')
 
 if (-not $slintReady)
 {
