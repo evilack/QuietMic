@@ -18,6 +18,11 @@
 
 QuietMic은 실제 마이크의 소리를 실시간으로 처리해 **QuietMic Output**이라는 가상 마이크로 전달합니다. Equalizer APO와 VB-CABLE은 필요하지 않으며, 오디오는 PC 밖으로 전송하거나 저장하지 않습니다.
 
+## 다운로드
+
+설치용 빌드는 [GitHub Releases](https://github.com/evilack/QuietMic/releases)에서 받을 수 있습니다.
+`QuietMic-Setup.exe`를 내려받고 함께 제공되는 `SHA256SUMS.txt`로 파일을 확인한 뒤 설치하세요.
+
 ## 화면
 
 ### 마이크

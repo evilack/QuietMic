@@ -3,6 +3,7 @@ name: Windows build
 on:
   push:
     branches: [main]
+    tags: ['v*.*.*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -50,3 +51,60 @@ jobs:
             dist/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish GitHub release
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out release metadata
+        uses: actions/checkout@v4
+
+      - name: Download verified installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: QuietMic-windows-x64
+          path: release
+
+      - name: Create or update GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $project = Get-Content -LiteralPath '.\CMakeLists.txt' -Raw
+          if ($project -notmatch 'project\(QuietMic VERSION ([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw 'Cannot read the QuietMic version from CMakeLists.txt.'
+          }
+
+          $tag = "v$($Matches[1])"
+          if ('${{ github.ref }}'.StartsWith('refs/tags/') -and '${{ github.ref_name }}' -ne $tag) {
+            throw "Tag '${{ github.ref_name }}' does not match project version '$tag'."
+          }
+
+          $assets = @(
+            '.\release\QuietMic-Setup.exe',
+            '.\release\SHA256SUMS.txt'
+          )
+
+          # 같은 커밋의 실패한 배포를 다시 실행할 때만 자산을 교체한다. 이미 다른
+          # 커밋에서 발행한 버전이면 CMake 버전을 올리도록 실패시켜 태그 불변성을 지킨다.
+          gh release view $tag --repo '${{ github.repository }}' *> $null
+          if ($LASTEXITCODE -eq 0) {
+            $tagSha = gh api "repos/${{ github.repository }}/git/ref/tags/$tag" --jq '.object.sha'
+            if ($tagSha -ne '${{ github.sha }}') {
+              throw "Release $tag already points to $tagSha. Increment the project version before publishing another commit."
+            }
+            gh release upload $tag @assets --clobber --repo '${{ github.repository }}'
+          }
+          else {
+            gh release create $tag @assets --target '${{ github.sha }}' --generate-notes `
+              --title "QuietMic $tag" --repo '${{ github.repository }}'
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "GitHub Release publishing failed for $tag."
+          }
