@@ -133,4 +133,6 @@ GitHub Actions도 같은 스크립트를 사용하며 생성된 `QuietMic-Setup.
 
 ## 라이선스
 
-QuietMic에 포함된 RNNoise, Slint, usbip-win2 및 관련 구성요소의 고지는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)와 `licenses` 폴더에서 확인할 수 있습니다.
+QuietMic 자체 소스 코드는 [MIT License](LICENSE)로 배포됩니다.
+
+RNNoise, Slint, usbip-win2 및 그 밖의 포함된 구성요소에는 각각의 라이선스가 적용됩니다. 자세한 저작권·라이선스 고지는 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)와 `licenses` 폴더에서 확인할 수 있습니다.
