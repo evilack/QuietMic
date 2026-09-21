@@ -39,6 +39,11 @@ $removeList = Join-Path $generated 'payload-remove.nsh'
 [IO.File]::WriteAllLines($installList,$installLines,[Text.UTF8Encoding]::new($true))
 [IO.File]::WriteAllLines($removeList,$removeLines,[Text.UTF8Encoding]::new($true))
 $output = Join-Path $projectRoot 'dist/QuietMic-Setup.exe'
+# 새로 클론한 저장소에는 dist 폴더가 없으므로, NSIS가 출력 파일을 열기 전에
+# 빌드 스크립트가 출력 위치를 직접 준비한다. 이전 빌드 결과가 남아 있는 개발 PC와
+# 빈 GitHub Actions 작업 공간에서 같은 동작을 보장하기 위한 단계다.
+$outputDirectory = Split-Path $output -Parent
+New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 $arguments = @('/V2',"/DOUTPUT_FILE=$output","/DPAYLOAD_INSTALL=$installList","/DPAYLOAD_REMOVE=$removeList")
 & $compiler @arguments (Join-Path $projectRoot 'installer/QuietMic.nsi')
 # 생성한 파일 목록은 include로 전달하고 설치 순서는 QuietMic.nsi에서 정의한다.
