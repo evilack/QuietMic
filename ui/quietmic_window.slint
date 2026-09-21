@@ -1,0 +1,218 @@
+// Slint 최상위 창. C++가 속성으로 상태를 보내고, UI는 callback으로 사용자의 요청을 돌려준다.
+import { Theme } from "theme.slint";
+import { Control, ToggleId, ParameterId, PresetId, ExternalLink } from "types.slint";
+import { Translations } from "localization.slint";
+import { Label, Muted, Action, Divider } from "components/controls.slint";
+import { MicrophonePage } from "pages/microphone.slint";
+import { FilterPage } from "pages/filter.slint";
+import { SettingsPage } from "pages/settings.slint";
+// 공용 타입을 이 파일에서도 내보내 C++ 생성 헤더와 UI 컴포넌트가 같은 계약을 참조한다.
+export { Control, ToggleId, ParameterId, PresetId, ExternalLink, Translations }
+export { VolumeWindow } from "volume_window.slint";
+
+// Window를 상속한 루트 컴포넌트다. Theme는 여러 파일이 공유하는 글꼴/색상/간격 모음이다.
+export component MainWindow inherits Window {
+    title: "QuietMic";
+    // 이미지는 C++ 어댑터가 배포 폴더에서 읽어 주입한다. UI 파일에 이미지 절대 경로를 넣지 않는다.
+    in property <image> running-icon;
+    in property <image> idle-icon;
+    in property <image> muted-icon;
+    in property <image> error-icon;
+    icon: root.running-icon;
+    preferred-width: 960px;
+    preferred-height: 780px;
+    min-width: 840px;
+    min-height: 690px;
+    background: Theme.window;
+    default-font-family: Theme.font-family;
+    default-font-size: Theme.body-size;
+    in property <string> app-version;
+    in property <Translations> translations;
+    in property <[string]> languages;
+    in-out property <int> language-index: 0;
+    // in은 외부에서 받는 값, in-out은 외부와 UI 양쪽에서 바꿀 수 있는 값이다. page는 현재 탭 번호다.
+    in-out property <int> page: 0;
+    // [string]은 목록 모델이다. 선택 인덱스는 현재 목록의 행 번호이며 -1은 선택 없음이다.
+    in property <[string]> inputs;
+    in property <[string]> outputs;
+    in-out property <int> input-index: -1;
+    in-out property <int> output-index: -1;
+    // 슬라이더 값/범위/의미 ID를 묶은 모델이다. 어떤 설정인지는 행 번호 대신 Control.id로 판단한다.
+    in property <[Control]> controls;
+    in property <Control> gain-control;
+    // running은 재연결 대기도 포함하는 사용자 관점 상태다. busy는 시작/설치 중 조작을 잠그는 별도 값이다.
+    in property <bool> running: false;
+    in property <bool> recovering: false;
+    in property <bool> busy: false;
+    in property <bool> muted: false;
+    in property <bool> denoise: true;
+    in property <bool> expander: true;
+    in property <bool> highpass: true;
+    in property <bool> custom-preset-saved: false;
+    in property <bool> autostart: false;
+    in property <bool> start-hidden: true;
+    in property <bool> auto-process: false;
+    in property <string> status;
+    in property <string> output-name;
+    // 미터 값과 성능 문구는 C++에서 계산하여 전달한다. Slint는 수신한 값을 그리는 역할만 맡는다.
+    in property <float> input-level: 0;
+    in property <float> output-level: 0;
+    in property <int> vad: 0;
+    in property <string> performance;
+    in property <[string]> speakers;
+    in-out property <int> speaker-index: -1;
+    in property <bool> testing: false;
+    // 표시 단위는 퍼센트다. C++ 어댑터에서 엔진용 0~1 범위로 변환한다.
+    in-out property <float> test-volume: 25;
+    // callback 선언은 이벤트 통로다. 버튼이 root의 콜백을 부르면 C++ bind에서 등록한 함수가 실행된다.
+    callback speaker-test;
+    callback speaker-volume(float);
+    callback select-speaker(int);
+    callback start-stop;
+    callback toggle(ToggleId);
+    callback parameter(ParameterId, float);
+    callback preset(PresetId);
+    callback load-custom-preset;
+    callback save-custom-preset;
+    callback select-input(int);
+    callback select-output(int);
+    callback refresh;
+    callback setup;
+    callback tray;
+    callback link(ExternalLink);
+    callback reset;
+    callback select-language(int);
+    // 외부 호출이 키보드 포커스를 음소거 버튼으로 옮길 수 있게 공개한 함수다.
+    public function focus-mute() { mute-button.focus-control(); }
+
+    HorizontalLayout {
+        padding: 0px;
+        spacing: 0px;
+        Rectangle {
+            width: 190px;
+            background: Theme.sidebar;
+            VerticalLayout {
+                padding: 22px;
+                spacing: 12px;
+                HorizontalLayout {
+                    height: 40px;
+                    spacing: 8px;
+                    Image { source: root.running-icon; width: 26px; image-fit: contain; }
+                    Label { text: "QuietMic"; font-size: 22px; font-weight: 700; vertical-alignment: center; }
+                }
+                Muted { text: root.translations.app-tagline; font-size: 10px; height: 30px; }
+                // 탭 버튼은 page만 변경한다. 아래 조건부 페이지가 이 값에 따라 바뀌며, 오디오 처리를 직접 시작하지 않는다.
+                Action { text: root.translations.nav-microphone; selected: root.page == 0; clicked => { root.page = 0; } }
+                Action { text: root.translations.nav-filter; selected: root.page == 1; clicked => { root.page = 1; } }
+                Action { text: root.translations.nav-settings; selected: root.page == 2; clicked => { root.page = 2; } }
+                Rectangle { vertical-stretch: 1; }
+                Divider { }
+                HorizontalLayout {
+                    height: 30px;
+                    spacing: 6px;
+                    Image {
+                        width: 20px;
+                        image-fit: contain;
+                        // 삼항식은 왼쪽 조건부터 평가한다. 재연결→정지→음소거→실행 순으로 표시 아이콘을 정한다.
+                        source: root.recovering ? root.error-icon : !root.running ? root.idle-icon : root.muted ? root.muted-icon : root.running-icon;
+                    }
+                    Label {
+                        text: root.recovering ? root.translations.state-reconnecting : root.running ? (root.muted ? root.translations.state-muted : root.translations.state-running) : root.translations.state-stopped;
+                        color: root.running ? Theme.accent : Theme.muted;
+                        vertical-alignment: center;
+                    }
+                }
+                Muted { text: "C++ · RNNoise\n" + root.app-version; height: 40px; }
+                Action { text: root.translations.action-hide; clicked => { root.tray(); } }
+            }
+        }
+        VerticalLayout {
+            padding: Theme.page-padding;
+            spacing: 16px;
+            HorizontalLayout {
+                height: 56px;
+                VerticalLayout {
+                    spacing: 6px;
+                    Label { text: root.page == 0 ? root.translations.nav-microphone : root.page == 1 ? root.translations.nav-filter : root.translations.nav-settings; font-size: Theme.title-size; font-weight: 700; }
+                    Muted { text: root.page == 0 ? root.translations.page-microphone-subtitle : root.page == 1 ? root.translations.page-filter-subtitle : root.translations.page-settings-subtitle; }
+                }
+                // 이름을 붙인 요소는 focus-mute에서도 참조한다. 토글 요청 후 실제 muted 값은 컨트롤러가 되돌려 준다.
+                mute-button := Action { width: 120px; text: root.muted ? root.translations.action-unmute : root.translations.action-mute; selected: root.muted; clicked => { root.toggle(ToggleId.mute); } }
+            }
+            // 조건이 맞는 페이지를 구성한다. 콜론(:) 바인딩은 값 전달, <=>는 양방향 연결, =>는 이벤트 처리다.
+            if root.page == 0 : MicrophonePage {
+                translations: root.translations;
+                gain-control: root.gain-control;
+                parameter(id, value) => { root.parameter(id, value); }
+                inputs: root.inputs;
+                // 자식의 선택 인덱스와 루트 인덱스를 함께 바꾸고, select-input 콜백으로 C++에도 선택 의도를 전달한다.
+                input-index <=> root.input-index;
+                running: root.running;
+                busy: root.busy;
+                output-name: root.output-name;
+                input-level: root.input-level;
+                output-level: root.output-level;
+                vad: root.vad;
+                performance: root.performance;
+                select-input(index) => { root.select-input(index); }
+                show-settings => { root.page = 2; }
+                refresh => { root.refresh(); }
+                start-stop => { root.start-stop(); }
+            }
+            // 필터 설정 페이지는 모델/스위치 상태를 받고 ID 기반 변경 요청을 최상위 콜백으로 전달한다.
+            if root.page == 1 : FilterPage {
+                translations: root.translations;
+                controls: root.controls;
+                denoise: root.denoise;
+                expander: root.expander;
+                highpass: root.highpass;
+                custom-preset-saved: root.custom-preset-saved;
+                toggle(id) => { root.toggle(id); }
+                parameter(id, value) => { root.parameter(id, value); }
+                preset(id) => { root.preset(id); }
+                load-custom-preset => { root.load-custom-preset(); }
+                save-custom-preset => { root.save-custom-preset(); }
+            }
+            // 미리듣기/시작 옵션/설치 페이지다. 페이지 이동 뒤에도 필요한 값은 루트 속성에 보관한다.
+            if root.page == 2 : SettingsPage {
+                translations: root.translations;
+                languages: root.languages;
+                language-index <=> root.language-index;
+                running: root.running;
+                busy: root.busy;
+                autostart: root.autostart;
+                start-hidden: root.start-hidden;
+                auto-process: root.auto-process;
+                speakers: root.speakers;
+                speaker-index <=> root.speaker-index;
+                testing: root.testing;
+                test-volume <=> root.test-volume;
+                app-version: root.app-version;
+                speaker-test => { root.speaker-test(); }
+                speaker-volume(value) => { root.speaker-volume(value); }
+                select-speaker(index) => { root.select-speaker(index); }
+                toggle(id) => { root.toggle(id); }
+                setup => { root.setup(); }
+                refresh => { root.refresh(); }
+                link(id) => { root.link(id); }
+                reset => { root.reset(); }
+                select-language(index) => { root.select-language(index); }
+            }
+            Rectangle {
+                height: 52px;
+                border-radius: 8px;
+                background: Theme.status;
+                Muted {
+                    x: 12px;
+                    y: 6px;
+                    width: parent.width - 24px;
+                    height: parent.height - 12px;
+                    // 컨트롤러가 선택한 상태나 예외 문구를 표시한다. 긴 문장은 영역 너비에 맞춰 줄바꿈한다.
+                    text: root.status;
+                    wrap: word-wrap;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

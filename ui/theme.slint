@@ -1,0 +1,38 @@
+// 모든 페이지/재사용 컨트롤이 참조하는 디자인 값 모음. 한 값을 바꾸면 해당 바인딩을 쓰는 화면에 함께 반영된다.
+// global은 개별 화면 인스턴스가 아닌 공유 속성 집합이다. out 속성으로 글꼴/치수/색상 값을 제공한다.
+export global Theme {
+    out property <string> font-family: "Malgun Gothic";
+    // length 값에는 px 같은 단위가 붙는다. 본문/설명/제목 크기와 카드 간격을 용도별로 정의한다.
+    out property <length> body-size: 14px;
+    out property <length> caption-size: 12px;
+    out property <length> title-size: 26px;
+    out property <length> section-size: 17px;
+    out property <length> page-padding: 28px;
+    out property <length> card-padding: 24px;
+    out property <length> card-radius: 14px;
+    out property <length> action-radius: 9px;
+    out property <length> action-height: 38px;
+    // 배경과 텍스트의 색을 용도별 이름으로 공유한다. 컨트롤 내부의 상태 조건식이 적절한 색을 선택한다.
+    out property <color> window: #111a1f;
+    out property <color> sidebar: #162127;
+    out property <color> card: #1b282e;
+    out property <color> status: #1c2b31;
+    out property <color> text: #e5ebee;
+    out property <color> muted: #8d9ca7;
+    out property <color> accent: #7ce3c0;
+    out property <color> accent-ink: #10271f;
+    out property <color> action-text: #e2ece8;
+    out property <color> action: #253138;
+    out property <color> action-hover: #35434a;
+    out property <color> action-selected: #28473e;
+    // 비활성/포커스/경고 색도 공통화하여 마우스와 키보드 조작 상태를 일관되게 표시한다.
+    out property <color> disabled: #20282c;
+    out property <color> disabled-text: #6c777c;
+    out property <color> divider: #2b3a41;
+    out property <color> track: #29383d;
+    out property <color> toggle-off: #44535a;
+    out property <color> toggle-thumb: #d3dcdf;
+    out property <color> toggle-thumb-on: #133a2d;
+    out property <color> focus: #ffffff;
+    out property <color> warning: #f7a47c;
+}

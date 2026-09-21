@@ -1,0 +1,8 @@
+// CMake가 @...@ 자리의 값을 치환하여 빌드 폴더에 만드는 버전 정보 템플릿이다.
+// 생성된 헤더를 직접 수정하지 말고 프로젝트의 버전 정의를 수정한다.
+#pragma once
+#include "version_info.h"
+
+namespace qm::build {
+inline constexpr char version[] = QUIETMIC_VERSION_STRING;
+}

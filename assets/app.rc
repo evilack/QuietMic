@@ -1,0 +1,32 @@
+// Windows 리소스 컴파일러의 최상위 입력이다. 메뉴/문자열/앱 아이콘/파일 버전 정보를 실행 파일에 포함한다.
+#include <windows.h>
+#include "resource_ids.h"
+#include "version_info.h"
+// 이후 리소스 텍스트를 UTF-8로 읽게 하여 한글 메뉴와 문구를 올바르게 컴파일한다.
+#pragma code_page(65001)
+// 트레이 메뉴의 명령 구조만 포함한다. 표시 문구는 외부 언어 카탈로그에서 실행 중에 채운다.
+#include "tray.rc"
+// 이 ICO는 실행 파일 리소스에 포함되는 앱 아이콘이다. 동적 트레이 아이콘 파일 로딩과는 별도다.
+IDI_APP ICON "app.ico"
+// Windows 파일 속성에 표시되는 버전 메타데이터다. 수치/문자열 버전은 빌드가 제공한 version_info.h를 사용한다.
+1 VERSIONINFO
+FILEVERSION QUIETMIC_VERSION_RESOURCE
+PRODUCTVERSION QUIETMIC_VERSION_RESOURCE
+FILETYPE VFT_APP
+BEGIN
+ BLOCK "StringFileInfo"
+ BEGIN
+  // 문자열 버전 정보 블록의 언어/문자 집합 키다. 아래 Translation 값과 짝을 이룬다.
+  BLOCK "040904B0"
+  BEGIN
+   VALUE "FileDescription", "QuietMic microphone noise reducer\0"
+   VALUE "ProductName", "QuietMic\0"
+   VALUE "FileVersion", QUIETMIC_VERSION_STRING "\0"
+   VALUE "OriginalFilename", "QuietMic.exe\0"
+  END
+ END
+ BLOCK "VarFileInfo"
+ BEGIN
+  VALUE "Translation", 0x409, 1200
+ END
+END

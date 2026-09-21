@@ -1,0 +1,4 @@
+// Windows 리소스 컴파일러도 읽을 수 있도록 버전 값을 전처리 매크로로 제공한다.
+#pragma once
+#define QUIETMIC_VERSION_RESOURCE @PROJECT_VERSION_MAJOR@,@PROJECT_VERSION_MINOR@,@PROJECT_VERSION_PATCH@,0
+#define QUIETMIC_VERSION_STRING "@PROJECT_VERSION@"

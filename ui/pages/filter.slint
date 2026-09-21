@@ -1,0 +1,76 @@
+// 필터 켜기/끄기, 프리셋, 세부 파라미터를 표시한다. 설정 변경은 의미 있는 ID를 상위로 전달한다.
+import { ScrollView } from "std-widgets.slint";
+import { Control, ToggleId, ParameterId, PresetId } from "../types.slint";
+import { Translations } from "../localization.slint";
+import { Action, SwitchRow, Divider } from "../components/controls.slint";
+import { ParameterRow } from "../components/parameter-row.slint";
+
+export component FilterPage inherits VerticalLayout {
+    in property <Translations> translations;
+    // C++ 설정 정의에서 만들어진 행 모델이다. 값뿐 아니라 허용 범위와 식별자를 함께 받는다.
+    in property <[Control]> controls;
+    in property <bool> denoise;
+    in property <bool> expander;
+    in property <bool> highpass;
+    in property <bool> custom-preset-saved;
+    callback toggle(ToggleId);
+    callback parameter(ParameterId, float);
+    callback preset(PresetId);
+    callback load-custom-preset;
+    callback save-custom-preset;
+
+    spacing: 12px;
+    HorizontalLayout {
+        height: 38px;
+        spacing: 10px;
+        // 프리셋 버튼은 ID만 보낸다. 구체적인 수치 묶음은 C++ 설정 계층이 적용하고 모델을 다시 갱신한다.
+        Action { text: root.translations.filter-preset-natural; clicked => { root.preset(PresetId.natural); } }
+        Action { text: root.translations.filter-preset-balanced; clicked => { root.preset(PresetId.balanced); } }
+        Action { text: root.translations.filter-preset-strong; clicked => { root.preset(PresetId.strong); } }
+    }
+    HorizontalLayout {
+        height: 38px;
+        spacing: 10px;
+        // 사용자 지정 불러오기는 실제 저장 슬롯이 있을 때만 활성화한다. 저장 버튼은
+        // 현재 스위치와 필터 슬라이더 값을 하나의 슬롯에 덮어쓴다.
+        Action { text: root.translations.filter-preset-custom; enabled: root.custom-preset-saved; clicked => { root.load-custom-preset(); } }
+        Action { text: root.translations.filter-preset-save; clicked => { root.save-custom-preset(); } }
+    }
+    ScrollView {
+        // 스크롤 내용의 너비를 현재 영역에 맞춰 주로 세로 방향으로 설정을 탐색하게 한다.
+        content-width: self.width;
+        VerticalLayout {
+            padding-right: 16px;
+            spacing: 4px;
+            SwitchRow {
+                title: root.translations.filter-denoise-title;
+                detail: root.translations.filter-denoise-detail;
+                checked: root.denoise;
+                toggled => { root.toggle(ToggleId.denoise); }
+            }
+            SwitchRow {
+                title: root.translations.filter-expander-title;
+                // 추가 감쇠는 RNNoise 발화 정보에 의존하므로, RNNoise가 꺼져 있으면 설명을 바꾸어 관계를 알린다.
+                detail: root.denoise ? root.translations.filter-expander-enabled : root.translations.filter-expander-disabled;
+                checked: root.expander;
+                toggled => { root.toggle(ToggleId.expander); }
+            }
+            SwitchRow {
+                title: root.translations.filter-highpass-title;
+                detail: root.translations.filter-highpass-detail;
+                checked: root.highpass;
+                toggled => { root.toggle(ToggleId.highpass); }
+            }
+            Divider { }
+            // 모델의 각 행마다 ParameterRow를 만든다. 행 순서가 바뀌어도 control.id로 의미를 판단한다.
+            for control in root.controls : ParameterRow {
+                control: control;
+                translations: root.translations;
+                // gain은 항상 활성이다. 하이패스 기준은 highpass, 원음 섞기는 denoise, 나머지 발화 관련 값은 denoise와 expander가 모두 필요하다.
+                enabled: control.id == ParameterId.gain || (control.id == ParameterId.highpass-cutoff ? root.highpass : control.id == ParameterId.dry-mix ? root.denoise : root.denoise && root.expander);
+                // 슬라이더 변경을 페이지→루트→C++ 어댑터 순서로 전달한다.
+                changed(id, value) => { root.parameter(id, value); }
+            }
+        }
+    }
+}

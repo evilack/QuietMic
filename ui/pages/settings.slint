@@ -1,0 +1,103 @@
+// 미리듣기 스피커/음량, 로그인 시작 옵션, 가상 마이크 설치와 앱 정보를 제공한다.
+import { ComboBox, Slider, ScrollView, AboutSlint } from "std-widgets.slint";
+import { ToggleId, ExternalLink } from "../types.slint";
+import { Translations } from "../localization.slint";
+import { Label, Muted, Action, SwitchRow, Divider, SectionTitle } from "../components/controls.slint";
+
+export component SettingsPage inherits ScrollView {
+    in property <Translations> translations;
+    in property <[string]> languages;
+    in-out property <int> language-index: 0;
+    // 엔진 상태와 busy를 받아 장치 변경이나 설치 등 충돌 가능한 조작을 비활성화한다.
+    in property <bool> running;
+    in property <bool> busy;
+    in property <bool> autostart;
+    in property <bool> start-hidden;
+    in property <bool> auto-process;
+    in property <[string]> speakers;
+    in-out property <int> speaker-index: -1;
+    in property <bool> testing;
+    // 미리듣기 음량의 UI 단위는 퍼센트다. 양방향 바인딩으로 슬라이더와 루트 값이 함께 바뀐다.
+    in-out property <float> test-volume: 25;
+    in property <string> app-version;
+    callback speaker-test;
+    callback speaker-volume(float);
+    callback select-speaker(int);
+    callback toggle(ToggleId);
+    callback setup;
+    callback refresh;
+    callback link(ExternalLink);
+    callback reset;
+    callback select-language(int);
+
+    // 내용 너비를 창 영역에 맞추고 긴 설정 목록은 세로로 스크롤한다.
+    content-width: self.width;
+    VerticalLayout {
+        padding-right: 16px;
+        spacing: 10px;
+        SectionTitle { text: root.translations.settings-language-title; }
+        Muted { text: root.translations.settings-language-detail; wrap: word-wrap; }
+        ComboBox {
+            model: root.languages;
+            current-index <=> root.language-index;
+            accessible-label: root.translations.settings-language-accessible;
+            selected(value) => { root.select-language(self.current-index); }
+        }
+        Divider { }
+        SectionTitle { text: root.translations.settings-preview-title; }
+        Muted { text: root.translations.settings-preview-detail; wrap: word-wrap; }
+        ComboBox {
+            // 실제 출력 장치 목록과 선택 인덱스를 연결한다. 실제 스피커 ID는 C++에 보관한다.
+            model: root.speakers;
+            current-index <=> root.speaker-index;
+            enabled: !root.running && !root.busy;
+            selected(value) => { root.select-speaker(self.current-index); }
+        }
+        Action { text: root.translations.settings-preview-refresh; clicked => { root.refresh(); } }
+        HorizontalLayout {
+            height: 32px;
+            spacing: 12px;
+            Label { text: root.translations.settings-preview-volume + " " + round(root.test-volume) + "%"; width: 180px; }
+            // 슬라이더 값은 0~100이며, 변경 이벤트를 별도로 보내 실행 중인 미리듣기 음량에도 즉시 반영한다.
+            Slider { minimum: 0; maximum: 100; value <=> root.test-volume; accessible-label: root.translations.settings-preview-volume; changed(value) => { root.speaker-volume(value); } }
+        }
+        Action {
+            text: root.testing ? root.translations.settings-preview-stop : root.translations.settings-preview-listen;
+            primary: true;
+            // 설치/시작 중은 차단한다. 일반 처리가 멈췄거나 이미 미리듣기 중이어야 하며 유효한 스피커 선택도 필요하다.
+            enabled: !root.busy && (!root.running || root.testing) && root.speaker-index >= 0;
+            clicked => { root.speaker-test(); }
+        }
+        // 테스트 중/일반 처리 중/정지 상태별 안내를 선택한다. 시간 제한의 실제 처리는 UI 문구가 아니라 오디오 계층의 책임이다.
+        Muted { text: root.testing ? root.translations.settings-preview-active : root.running ? root.translations.settings-preview-processing : root.translations.settings-preview-ready; wrap: word-wrap; }
+        Divider { }
+        SectionTitle { text: root.translations.settings-startup-title; }
+        // 체크 상태를 직접 바꾸지 않고 토글 ID를 보낸다. OS/설정 변경 뒤 컨트롤러가 확정한 값이 되돌아온다.
+        SwitchRow { title: root.translations.settings-autostart-title; detail: root.translations.settings-autostart-detail; checked: root.autostart; toggled => { root.toggle(ToggleId.autostart); } }
+        SwitchRow { title: root.translations.settings-hidden-title; detail: root.translations.settings-hidden-detail; checked: root.start-hidden; toggled => { root.toggle(ToggleId.start-hidden); } }
+        SwitchRow { title: root.translations.settings-auto-title; detail: root.translations.settings-auto-detail; checked: root.auto-process; toggled => { root.toggle(ToggleId.auto-process); } }
+        Divider { }
+        SectionTitle { text: root.translations.settings-virtual-title; height: 34px; }
+        Label { text: "QuietMic Output"; height: 28px; font-weight: 600; }
+        Muted { text: root.translations.settings-virtual-detail; wrap: word-wrap; }
+        HorizontalLayout {
+            height: 38px;
+            spacing: 8px;
+            // 설치 버튼은 작업 중 문구를 바꾸고 엔진이 동작 중이거나 busy일 때 비활성화한다.
+            Action { text: root.busy ? root.translations.settings-virtual-preparing : root.translations.settings-virtual-setup; enabled: !root.running && !root.busy; clicked => { root.setup(); } }
+        }
+        Divider { }
+        Label { text: "QuietMic " + root.app-version; height: 34px; font-weight: 600; }
+        Muted { text: root.translations.settings-transport-detail; wrap: word-wrap; }
+        // 주소 문자열 대신 정해진 링크 ID를 전달한다. 기본 브라우저 실행은 Windows 서비스 계층이 담당한다.
+        Action { text: root.translations.settings-transport-source; clicked => { root.link(ExternalLink.transport); } }
+        Muted { text: root.translations.settings-privacy; wrap: word-wrap; }
+        HorizontalLayout {
+            height: 38px;
+            spacing: 8px;
+            AboutSlint { }
+            // 초기화 콜백은 컨트롤러에서 균형 프리셋 적용으로 연결된다.
+            Action { text: root.translations.settings-reset; clicked => { root.reset(); } }
+        }
+    }
+}

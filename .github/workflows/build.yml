@@ -1,0 +1,52 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Prepare pinned dependencies and Visual Studio solution
+        shell: pwsh
+        run: .\scripts\bootstrap.ps1
+
+      - name: Build Release package
+        shell: pwsh
+        run: .\scripts\build.ps1 -SlintSdk .\.deps\slint
+
+      - name: Build installer
+        shell: pwsh
+        run: .\scripts\build-installer.ps1
+
+      - name: Create SHA-256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash -LiteralPath .\dist\QuietMic-Setup.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText(
+            (Join-Path (Resolve-Path .\dist).Path 'SHA256SUMS.txt'),
+            "$hash  QuietMic-Setup.exe`r`n",
+            [Text.UTF8Encoding]::new($false))
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuietMic-windows-x64
+          path: |
+            dist/QuietMic-Setup.exe
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

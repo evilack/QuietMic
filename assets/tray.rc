@@ -1,0 +1,17 @@
+﻿// 표준 트레이 메뉴와 툴팁. 볼륨 메뉴는 별도의 소형 Slint 창을 연다.
+#include "resource_ids.h"
+IDR_TRAY_MENU MENU
+BEGIN
+    POPUP "QuietMic"
+    BEGIN
+        MENUITEM "Open QuietMic", IDM_TRAY_SHOW
+        MENUITEM "Output volume settings…", IDM_TRAY_VOLUME
+        MENUITEM "Mute", IDM_TRAY_MUTE
+        MENUITEM "Start microphone", IDM_TRAY_PROCESSING
+        MENUITEM SEPARATOR
+        MENUITEM "RNNoise noise reduction", IDM_TRAY_DENOISE
+        MENUITEM "Run at Windows sign-in", IDM_TRAY_STARTUP
+        MENUITEM SEPARATOR
+        MENUITEM "Quit", IDM_TRAY_QUIT
+    END
+END

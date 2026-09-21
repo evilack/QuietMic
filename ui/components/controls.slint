@@ -1,0 +1,145 @@
+// 페이지에서 반복되는 텍스트, 버튼, 스위치, 미터 등을 공통 컴포넌트로 정의한다.
+import { Theme } from "../theme.slint";
+
+// Text의 기본 스타일을 모은다. 사용하는 곳에서 text나 font-size 등을 덮어쓸 수 있다.
+export component Label inherits Text {
+    color: Theme.text;
+    font-size: Theme.body-size;
+    font-family: Theme.font-family;
+}
+
+// 보조 설명용 텍스트다. 여기서 Muted는 오디오 음소거가 아니라 덜 강조한 글자 스타일을 뜻한다.
+export component Muted inherits Label {
+    color: Theme.muted;
+    font-size: Theme.caption-size;
+}
+
+// 버튼 모양과 마우스/키보드/접근성 입력을 한곳에 구현한다. 실행 내용은 clicked 콜백을 연결한 쪽이 정한다.
+export component Action inherits Rectangle {
+    in property <string> text;
+    in property <bool> primary: false;
+    in property <bool> selected: false;
+    in property <bool> enabled: true;
+    callback clicked;
+    // 내부 FocusScope로 포커스를 옮기는 공개 함수다. 외부는 내부 요소 이름을 알 필요가 없다.
+    public function focus-control() { focus.focus(); }
+
+    min-width: 90px;
+    height: Theme.action-height;
+    border-radius: Theme.action-radius;
+    // 비활성→주요 버튼→선택됨→마우스 올림→기본 순으로 색을 정한다. 앞 조건이 성립하면 뒤 조건은 선택되지 않는다.
+    background: !enabled ? Theme.disabled : primary ? Theme.accent : selected ? Theme.action-selected : touch.has-hover ? Theme.action-hover : Theme.action;
+    border-width: selected || focus.has-focus ? 1px : 0px;
+    border-color: Theme.accent;
+    // 화면 읽기 도구에 역할/이름/활성 여부를 제공하고 기본 동작을 일반 클릭과 같은 콜백으로 연결한다.
+    accessible-role: button;
+    accessible-label: root.text;
+    accessible-enabled: root.enabled;
+    // 버튼이 받은 포커스는 내부 FocusScope로 전달한다. Return/Space만 처리하고 나머지 키는 reject로 돌려준다.
+    accessible-action-default => { if root.enabled { root.clicked(); } }
+    forward-focus: focus;
+    focus := FocusScope {
+        enabled: root.enabled;
+        key-pressed(event) => {
+            if event.text == Key.Return || event.text == " " {
+                // 키를 계속 누를 때 자동 반복으로 동작이 여러 번 실행되지 않도록 첫 입력만 받는다.
+                if !event.repeat { root.clicked(); }
+                return accept;
+            }
+            reject
+        }
+    }
+    Label {
+        text: root.text;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        color: !root.enabled ? Theme.disabled-text : root.primary ? Theme.accent-ink : Theme.action-text;
+        font-weight: 600;
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        // 마우스로 눌러도 키보드 포커스를 맞춘 뒤 같은 clicked 이벤트를 발생시킨다.
+        clicked => { focus.focus(); root.clicked(); }
+    }
+}
+
+// checked는 외부 상태다. 사용자가 누르면 toggled를 요청하고 컨트롤러가 새 상태를 다시 주입한다.
+export component Toggle inherits Rectangle {
+    in property <bool> checked;
+    in property <string> label;
+    callback toggled;
+    width: 42px;
+    height: 24px;
+    border-radius: 12px;
+    background: checked ? Theme.accent : Theme.toggle-off;
+    border-width: focus.has-focus ? 2px : 0px;
+    border-color: Theme.focus;
+    // 보이는 스위치를 접근성 API에서는 체크박스로 설명하고 현재 체크 여부도 전달한다.
+    accessible-role: checkbox;
+    accessible-label: root.label;
+    accessible-checked: root.checked;
+    accessible-action-default => { root.toggled(); }
+    forward-focus: focus;
+    focus := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Return || event.text == " " {
+                // 스위치도 Return/Space의 자동 반복을 무시해 의도치 않은 여러 번 전환을 막는다.
+                if !event.repeat { root.toggled(); }
+                return accept;
+            }
+            reject
+        }
+    }
+    Rectangle {
+        // 체크 여부에 따라 손잡이 위치를 바꾸고 아래에서 색상도 함께 바꾼다.
+        x: root.checked ? 21px : 3px;
+        y: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: root.checked ? Theme.toggle-thumb-on : Theme.toggle-thumb;
+    }
+    TouchArea { clicked => { focus.focus(); root.toggled(); } }
+}
+
+// 제목/설명/스위치를 한 행으로 구성한다. 내부 스위치 이벤트를 행의 toggled 이벤트로 올려 보낸다.
+export component SwitchRow inherits Rectangle {
+    in property <string> title;
+    in property <string> detail;
+    in property <bool> checked;
+    callback toggled;
+    height: 66px;
+    HorizontalLayout {
+        padding: 0px;
+        spacing: 16px;
+        VerticalLayout {
+            alignment: center;
+            spacing: 5px;
+            Label { text: root.title; font-weight: 600; }
+            Muted { text: root.detail; }
+        }
+        VerticalLayout {
+            alignment: center;
+            Toggle { label: root.title; checked: root.checked; toggled => { root.toggled(); } }
+        }
+    }
+}
+
+// 0~1 비율을 막대 너비로 표현하는 표시 전용 컴포넌트다.
+export component Meter inherits Rectangle {
+    in property <float> value;
+    height: 7px;
+    background: Theme.track;
+    border-radius: 4px;
+    Rectangle {
+        // 범위를 벗어나도 막대가 영역 밖으로 나가지 않도록 0~1로 제한한다. 0.95를 넘으면 경고 색을 사용한다.
+        width: parent.width * min(1, max(0, root.value));
+        background: root.value > 0.95 ? Theme.warning : Theme.accent;
+        border-radius: 4px;
+    }
+}
+
+// 분리선/카드/섹션 제목은 동작 없이 공통 크기와 스타일만 제공하는 짧은 컴포넌트다.
+export component Divider inherits Rectangle { height: 1px; background: Theme.divider; }
+export component Card inherits Rectangle { background: Theme.card; border-radius: Theme.card-radius; }
+export component SectionTitle inherits Label { font-size: Theme.section-size; font-weight: 700; height: 28px; }

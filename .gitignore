@@ -1,0 +1,12 @@
+/build/
+/x64/
+/QuietMic.sln
+/QuietMic.slnx
+/dist/
+/.vs/
+/.idea/
+*.user
+*.ppm
+/.deps/
+
+/.signing/

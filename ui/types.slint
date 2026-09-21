@@ -1,0 +1,11 @@
+// UI와 C++ 어댑터가 교환하는 의미 있는 식별자와 슬라이더 행 구조를 정의한다.
+// Semantic identifiers at the UI/controller boundary. Never use model row indices as commands.
+// 각 열거형 값은 요청의 의미다. 화면의 순서가 바뀌어도 명령이 다른 설정을 가리키지 않는다.
+export enum ToggleId { mute, denoise, expander, highpass, autostart, start-hidden, auto-process }
+// C++ 설정 파라미터와의 대응은 MainView::Impl에서 명시적으로 변환한다.
+export enum ParameterId { dry-mix, highpass-cutoff, voice-threshold, reduction, hold, release, attack, gain }
+export enum PresetId { natural, balanced, strong }
+export enum ExternalLink { transport, slint }
+
+// value/low/high는 UI 표시 단위의 숫자다. id는 값 변경 이벤트가 어떤 설정을 바꿀지 알려 준다.
+export struct Control { value: float, low: float, high: float, id: ParameterId }
