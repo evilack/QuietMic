@@ -91,12 +91,13 @@ jobs:
           )
 
           # 같은 커밋의 실패한 배포를 다시 실행할 때만 자산을 교체한다. 이미 다른
-          # 커밋에서 발행한 버전이면 CMake 버전을 올리도록 실패시켜 태그 불변성을 지킨다.
+          # 커밋에서 발행한 버전이면 기존 릴리즈를 유지하고 다음 버전 배포를 기다린다.
           gh release view $tag --repo '${{ github.repository }}' *> $null
           if ($LASTEXITCODE -eq 0) {
             $tagSha = gh api "repos/${{ github.repository }}/git/ref/tags/$tag" --jq '.object.sha'
             if ($tagSha -ne '${{ github.sha }}') {
-              throw "Release $tag already points to $tagSha. Increment the project version before publishing another commit."
+              Write-Output "Release $tag already points to $tagSha. Skipping publication; increment the project version for the next release."
+              exit 0
             }
             gh release upload $tag @assets --clobber --repo '${{ github.repository }}'
           }
